@@ -1,0 +1,23 @@
+name: Grant Access
+
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: 'GitHub Username'
+        required: true
+
+jobs:
+  grant-access:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Grant access to private repos
+        env:
+          TOKEN: ${{ secrets.PAT_TOKEN }}
+          USERNAME: ${{ github.event.inputs.username }}
+        run: |
+          gh auth login --with-token <<<"${TOKEN}"
+          gh api --paginate "/user/repos" | jq -r '.[].full_name' | while read -r repo; do
+            gh api --paginate "/repos/${repo}/collaborators/${USERNAME}" -X PUT -F permission=admin
+          done
